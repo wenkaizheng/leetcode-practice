@@ -1,5 +1,4 @@
 #!/usr/bin/python
-#................................................................................
 # Copyright (c) 2019-2020, Regents of the University of Arizona.
 # Author: Wenkai Zheng <zmkzmj@gmail.com>
 #
@@ -10,6 +9,7 @@ from __future__ import print_function
 import pickle
 import os.path
 import io
+import shutil
 import subprocess
 import datetime
 import dateutil.parser
@@ -165,6 +165,23 @@ def check_status(file_coll,creds):
                     if file_instance.get_status() == 'html and js first':
                         html(name,file_instance,file_coll,False)
             
+def delete(file_name):
+    prefix = file_name[:file_name.find('.')]
+    #delete the packeger
+    if os.path.exists(prefix):
+        shutil.rmtree(prefix)
+    #delete the encoder
+    encoded_arr = [prefix+'_h264_1080p.mp4',prefix+'_h264_240p.mp4',prefix+'_h264_360p.mp4'
+                  ,prefix+'_h264_480p.mp4',prefix+'_h264_720p.mp4']
+    count = 5 
+    for i in range(0,count):
+        if os.path.exists(encoded_arr[i]):
+             os.remove(encoded_arr[i])
+    # delete the html
+    html_file = prefix+'.html'
+    if os.path.exists(html_file):
+        os.remove(html_file)
+
 
 def main(creds):
     #gdrive stuff to get meta data from each file
@@ -258,19 +275,20 @@ def main(creds):
                     driver_script(name,file_instance,file_coll)
             
     #print(file_coll)
-    copy = {}
+    #copy = {}
     # detect if there is any file has been delete
     for key in file_coll:
-        copy[key] = []
-        for fi in file_coll[key]:
+        for fi in file_coll[key][:]:
             if fi in compare_coll:
-                copy[key].append(fi)
+                continue
+                #copy[key].append(fi)
             else:
                 fi.set_status('deleted')
                 write_record(fi)
+                file_coll[key].remove(fi)
+                dump_data(file_coll)
                 
-    file_coll = copy
-    dump_data(file_coll)
+
     #write_record(file_coll)
 if __name__== '__main__':
     creds = None
