@@ -35,20 +35,20 @@ def write_record(file_instance):
     '''
     todo write record to txt file when first time load storage 
     '''
-    with open('file_record.txt','a') as f:
+    with open(env_path + 'file_record.txt','a') as f:
                 f.write(str(file_instance))
 
 def dump_data(file_coll):
-    with open('data-s', 'wb') as token:
+    with open(env_path + 'data-s', 'wb') as token:
                pickle.dump(file_coll, token)
 def load_data():
      rc = None
-     with open('data-s', 'wr') as token:
+     with open(env_path + 'data-s', 'wr') as token:
               rc = pickle.load(token)
      return rc
 def driver_script(file_name,file_instance,file_coll):
     
-    pwd = os.path.dirname(os.path.realpath("driver.sh"))
+    pwd = os.path.abspath(env_path + "../video/driver.sh")
     #pwd1 = os.path.dirname(os.path.realpath("packager.sh")) +'/packager.sh'
     file_name_prefix = file_name[:file_name.find('.')]
     base = '/ndn/web/video'
@@ -68,18 +68,19 @@ def driver_script(file_name,file_instance,file_coll):
     
     html(file_name,file_instance,file_coll,True)
 def encode(file_name,file_instance,file_coll):
-    encode = './transcoder.sh ' + file_name + ' && wait'
+    encode = env_path + '../video/transcoder.sh ' + file_name + ' && wait'
     if driver_script_helper(encode) == 0:
         file_instance.set_status('encoded')
-        dump_data(file_coll)   
+        dump_data(file_coll) 
+        write_record(file_instance)  
 def packaged(file_name,file_instance,file_coll):
-    pwd = os.path.dirname(os.path.realpath("driver.sh"))
-    pwd1 = os.path.dirname(os.path.realpath("packager.sh")) +'/packager.sh'
+    pwd = './'
+    pwd1 = env_path + "../video/packager.sh"
     file_name_prefix = file_name[:file_name.find('.')]
     protocol = 'hls'
     playlist = 'playlist.m3u8'
-    package = (pwd1+' ' +pwd+' ' + file_name_prefix + ' '
-        + pwd +'/'+file_name_prefix + '/' + protocol + ' ' 
+    package = (pwd1+' ' +'.'+' ' + file_name_prefix + ' '
+        + pwd +file_name_prefix + '/' + protocol + ' ' 
             + protocol + ' && wait')
     if driver_script_helper(package) == 0:
         file_instance.set_status('packaged')
@@ -183,7 +184,7 @@ def delete(file_name):
         os.remove(html_file)
 
 
-def main(creds):
+def process(creds):
     #gdrive stuff to get meta data from each file
     update_token(creds)
     g = u'gdrive --access-token ' + creds.token + u' list'
@@ -200,8 +201,8 @@ def main(creds):
         output, err = process.communicate()
         items.append(output)
     file_coll = None
-    if os.path.exists('data-s'):
-         with open('data-s','rb') as token:
+    if os.path.exists(env_path + 'data-s'):
+         with open(env_path + 'data-s','rb') as token:
               file_coll = pickle.load(token)
          check_status(file_coll,creds)
         #print(file_coll)
@@ -226,6 +227,8 @@ def main(creds):
                if file_id not in file_coll:
                     file_coll[file_id] = []
                continue
+            if mime_type.find('video') == -1:
+                continue
            # print('80th   ' + parent)
             file_instance = myFile(name,file_id,mime_type,dateutil.parser.parse(time),'initial',parent)
             compare_coll.append(file_instance)
@@ -248,13 +251,13 @@ def main(creds):
                            write_record(re)
                            driver_script(name,re,file_coll)
                if not find:
+                    # if the folder is created earlier than file
                     file_coll[parent].append(file_instance)
+                    dump_data(file_coll)
+                    write_record(file_instance)
                     print("101th")
                     rv = download(file_id,creds)
                     if rv == 0:
-                      # when it is initial
-                      dump_data(file_coll)
-                      write_record(file_instance)
                       file_instance.set_status("download")
                       dump_data(file_coll)
                       write_record(file_instance)
@@ -263,12 +266,12 @@ def main(creds):
             else:
                 file_coll[parent] = []
                 file_coll[parent].append(file_instance)
+                 # when it is initial
+                dump_data(file_coll)
+                write_record(file_instance)
                 print("106th")
                 rv = download(file_id,creds)
                 if rv == 0:
-                     # when it is initial
-                    dump_data(file_coll)
-                    write_record(file_instance)
                     file_instance.set_status("download")
                     dump_data(file_coll)
                     write_record(file_instance)
@@ -290,25 +293,35 @@ def main(creds):
                 
 
     #write_record(file_coll)
-if __name__== '__main__':
+def start():
     creds = None
     count = 0
+    #pwd = os.path.abspath('../')
+    #print(pwd)
+    print(env)
     while True:
        if count == 0:
           """
           Netwrok stuff to get token with google drive server
           """
-          if os.path.exists('token.pickle'):
-             with open('token.pickle', 'rb') as token:
+          if os.path.exists(env_path + 'token.pickle'):
+             with open(env_path + 'token.pickle', 'rb') as token:
                   creds = pickle.load(token)
           if not creds or not creds.valid:
              if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
              else:
                 flow = InstalledAppFlow.from_client_secrets_file(
-                'credapi.json', SCOPES)
+                env_path + 'credapi.json', SCOPES)
                 creds = flow.run_local_server(port=0)
-          with open('token.pickle', 'wb') as token:
+          with open(env_path + 'token.pickle', 'wb') as token:
                pickle.dump(creds, token)
-       main(creds)
+       process(creds)
        count +=1
+
+env_path = ''
+env = os.path.abspath('./')
+env = env.split('/')[-1]
+if env == 'test':
+   env_path = '../'
+start()
