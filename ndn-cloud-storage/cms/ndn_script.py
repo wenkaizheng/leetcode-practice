@@ -13,7 +13,7 @@ import shutil
 import subprocess
 import datetime
 import dateutil.parser
-from googleapiclient.discovery import build
+#from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 #from googleapiclient.http import MediaIoBaseDownload
@@ -27,10 +27,8 @@ def download(id,creds):
     g = u'gdrive --access-token ' + creds.token + u' download --force ' +id 
     process = subprocess.Popen(g, shell=True, stdout=subprocess.PIPE)
     output, err = process.communicate()
-    print(output)
-    if not err:
-        return 0
-    else: return 1 
+    #print(output)
+    return process.returncode
 def write_record(file_instance):
     '''
     todo write record to txt file when first time load storage 
@@ -115,7 +113,7 @@ def html(file_name,file_instance,file_coll,judge):
 def driver_script_helper(command):
     process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
     output, err = process.communicate()
-    print(output)
+   # print(output)
     print (process.returncode)
     return process.returncode
 def update_token(creds):
@@ -168,6 +166,9 @@ def check_status(file_coll,creds):
             
 def delete(file_name):
     prefix = file_name[:file_name.find('.')]
+    #delete it self
+    if os.path.exists(file_name):
+        os.remove(file_name)
     #delete the packeger
     if os.path.exists(prefix):
         shutil.rmtree(prefix)
@@ -219,16 +220,16 @@ def process(creds):
             item =  item.split('\n')[:-1]
             file_id = item[0][item[0].find(':')+2:]
             name = item[1][item[1].find(':')+2:]
-            time = item[5][item[5].find(':')+2:]
-            parent = item[7][item[7].find(':')+2:]
             mime_type = item[3][item[3].find(':')+2:]
-            print(name,time,parent,file_id,mime_type,file_id)
+           # print(name,time,parent,file_id,mime_type,file_id)
             if mime_type == 'application/vnd.google-apps.folder':
                if file_id not in file_coll:
                     file_coll[file_id] = []
                continue
             if mime_type.find('video') == -1:
                 continue
+            time = item[6][item[6].find(':')+2:]
+            parent = item[9][item[9].find(':')+2:]
            # print('80th   ' + parent)
             file_instance = myFile(name,file_id,mime_type,dateutil.parser.parse(time),'initial',parent)
             compare_coll.append(file_instance)
