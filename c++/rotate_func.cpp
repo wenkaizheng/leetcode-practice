@@ -13,10 +13,9 @@ public:
 			cur+=i*A[i];
 		}
 		res=cur;
-		reverse(A.begin(),A.end());
         //cout<< tol << endl;
         //cout<< res << endl;
-		for(int i=0;i<A.size();i++){
+		for(int i=A.size()-1;i>=0;i--){
 			cur=cur+tol-A.size()*A[i];
 			res=max(res,cur);
 		}
