@@ -6,6 +6,7 @@
 # this script e.g., in COPYING.md file. If not, see <http://www.gnu.org/licenses/>.
 #
 from __future__ import print_function
+import argparse
 import pickle
 import os.path
 import io
@@ -13,6 +14,7 @@ import shutil
 import subprocess
 import datetime
 import dateutil.parser
+import sys
 #from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
@@ -27,15 +29,16 @@ def download(id,creds):
     g = u'gdrive --access-token ' + creds.token + u' download --force ' +id 
     process = subprocess.Popen(g, shell=True, stdout=subprocess.PIPE)
     output, err = process.communicate()
+    if version == 'debug':
+        write_rdebug_record(output)
     #print(output)
     return process.returncode
 def write_record(file_instance):
-    '''
-    todo write record to txt file when first time load storage 
-    '''
     with open(env_path + 'file_record.txt','a') as f:
                 f.write(str(file_instance))
-
+def write_rdebug_record(output):
+    with open(env_path + 'file_record.txt','a') as f:
+                f.write(output)
 def dump_data(file_coll):
     with open(env_path + 'data-s', 'wb') as token:
                pickle.dump(file_coll, token)
@@ -48,11 +51,15 @@ def driver_script(file_name,file_instance,file_coll):
     
     pwd = os.path.abspath(env_path + "../video/driver.sh")
     #pwd1 = os.path.dirname(os.path.realpath("packager.sh")) +'/packager.sh'
-    file_name_prefix = file_name[:file_name.find('.')]
+    #file_name_prefix = file_name[:file_name.find('.')]
     base = '/ndn/web/video'
     encode(file_name,file_instance,file_coll)
-
     packaged(file_name,file_instance,file_coll)
+    chunker(file_name,file_instance,file_coll)
+    html(file_name,file_instance,file_coll,True)
+def chunker(file_name,file_instance,file_coll):
+    file_name_prefix = file_name[:file_name.find('.')]
+    base = '/ndn/web/video'
     version = '1'
     segmentSize = '8000'
     chunker = ('chunker '+ base + '/' + file_name_prefix + ' -i ' 
@@ -63,8 +70,7 @@ def driver_script(file_name,file_instance,file_coll):
         file_instance.set_status('chunked')
         dump_data(file_coll)
         write_record(file_instance)
-    
-    html(file_name,file_instance,file_coll,True)
+
 def encode(file_name,file_instance,file_coll):
     encode = env_path + '../video/transcoder.sh ' + file_name + ' && wait'
     if driver_script_helper(encode) == 0:
@@ -113,51 +119,82 @@ def html(file_name,file_instance,file_coll,judge):
 def driver_script_helper(command):
     process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
     output, err = process.communicate()
+    if version == 'debug':
+        write_rdebug_record(output)
    # print(output)
     print (process.returncode)
     return process.returncode
 def update_token(creds):
     if creds.expired and creds.refresh_token:
             creds.refresh(Request())
+def check_all_encode(prefix):
+      count = 5 
+      real_count = check_encoded_number(prefix)
+      if real_count != count:
+         return False
+      else:
+          return True
+def check_encoded_number(prefix):
+     encoded_arr = [prefix+'_h264_1080p.mp4',prefix+'_h264_240p.mp4',prefix+'_h264_360p.mp4'
+                  ,prefix+'_h264_480p.mp4',prefix+'_h264_720p.mp4']
+     num = 0
+     for i in encoded_arr:
+         if os.path.exists(i):
+            num +=1
+     return num
 def check_status(file_coll,creds):
     for key in file_coll:
         for file_instance in file_coll[key]:
             status = file_instance.get_status()
             name = file_instance.get_name()
             file_id = file_instance.get_id()
+            web = name[:name.find('.')]+'.html'
+            prefix =name[:name.find('.')]
             if status == 'initial':
                 download(file_id ,creds)
                 driver_script(name,file_instance,file_coll)
 
             elif status == 'download':
                   #todo check if the file exist and process
-                  if not os.path.exists(name):
-                      download(file_id,creds)
+                  if os.path.exists(name):
+                     pass
+                  else:
+                      download(file_id ,creds)
+                  if check_encoded_number(prefix)>0:
+                      delete_encoder(name)
                   driver_script(name,file_instance,file_coll)
             elif status == 'encoded':
-                  # ask chavoosh to answer
-                  #   VIDEO_FILE_NAME_h264_720p.mp4
-                  prefix =name[:name.find('.')]
-                  encoded_arr = [prefix+'_h264_1080p.mp4',prefix+'_h264_240p.mp4',prefix+'_h264_360p.mp4'
-                  ,prefix+'_h264_480p.mp4',prefix+'_h264_720p.mp4']
-                  count = 5 
-                  real_count = 0
-                  for i in range(0,count):
-                      if os.path.exists(encoded_arr[i]):
-                          real_count +=1
-                  if real_count != count:
-                      encoded_arr(name,file_instance,file_coll)
-
-                  print('todo')
+                  if check_all_encode(prefix):
+                     pass
+                  else:
+                     delete_encoder(name)
+                     driver_script(name,file_instance,file_coll)
+                     continue
+                  # in the middle of package
+                  if os.path.exists(prefix):
+                      delete_packager(name)
+                  packaged(name,file_instance,file_coll)
+                  chunker(name,file_instance,file_coll)
+                  html(name,file_instance,file_coll)
+                      
             elif status == 'packaged':
-                 prefix = name[:name.find('.')]
-                 if not os.path.exists(name):
+                 if os.path.exists(prefix):
+                    pass
+                 else:
                      packaged(name,file_instance,file_coll)
+                 #todo wait for MongoDB stuff 
+                 #in the middle of chunck
+                 chunker(name,file_instance,file_coll)
+                 html(name,file_instance,file_coll)
+                    
             elif status == 'chunked':
+                 # todo we need to check MongoDB before generate html
+                 # in the middle of html
+                 if os.path.exists(web):
+                     delete_html(name)
                  html(name,file_instance,file_coll,True)
             # only one left is html but we need to have two 
             else:
-                web = name[:name.find('.')]+'.html'
                 if not os.path.exists(web):
                     html(name,file_instance,file_coll,True)
                 else:
@@ -165,25 +202,44 @@ def check_status(file_coll,creds):
                         html(name,file_instance,file_coll,False)
             
 def delete(file_name):
-    prefix = file_name[:file_name.find('.')]
     #delete it self
     if os.path.exists(file_name):
         os.remove(file_name)
-    #delete the packeger
+
+def delete_packager(file_name):
+    prefix = file_name[:file_name.find('.')]
     if os.path.exists(prefix):
         shutil.rmtree(prefix)
+def delete_encoder(file_name):
     #delete the encoder
+    prefix = file_name[:file_name.find('.')]
     encoded_arr = [prefix+'_h264_1080p.mp4',prefix+'_h264_240p.mp4',prefix+'_h264_360p.mp4'
                   ,prefix+'_h264_480p.mp4',prefix+'_h264_720p.mp4']
     count = 5 
     for i in range(0,count):
         if os.path.exists(encoded_arr[i]):
              os.remove(encoded_arr[i])
-    # delete the html
+def delete_html(file_name):
+    prefix = file_name[:file_name.find('.')]
     html_file = prefix+'.html'
     if os.path.exists(html_file):
         os.remove(html_file)
-
+def change_name(old,new):
+    old_prefix = old[:old.find('.')]
+    new_prefix = new[:new.find('.')]
+    old_encoded_arr = [old_prefix+'_h264_1080p.mp4',old_prefix+'_h264_240p.mp4',old_prefix+'_h264_360p.mp4'
+                      ,old_prefix+'_h264_480p.mp4',old_prefix+'_h264_720p.mp4']
+    new_encoded_arr = [new_prefix+'_h264_1080p.mp4',new_prefix+'_h264_240p.mp4',new_prefix+'_h264_360p.mp4'
+                      ,new_prefix+'_h264_480p.mp4',new_prefix+'_h264_720p.mp4']
+    # name of file replacement
+    os.rename(old,new)
+    # encoder replacement
+    for i in range(0,5):
+        os.rename(old_encoded_arr[i],new_encoded_arr[i])
+    # package replacement
+    os.rename(old_prefix,new_prefix)
+    # html replacement
+    os.rename(old_prefix+'.html',new_prefix+'.html')
 
 def process(creds):
     #gdrive stuff to get meta data from each file
@@ -245,12 +301,7 @@ def process(creds):
                         dump_data(file_coll)
                         write_record(re)
                         print("97th")
-                        rv = download(file_id,creds)
-                        if rv == 0:
-                           re.set_status("download")
-                           dump_data(file_coll)
-                           write_record(re)
-                           driver_script(name,re,file_coll)
+                        change_name(re.get_name(),file_instance.get_name())
                if not find:
                     # if the folder is created earlier than file
                     file_coll[parent].append(file_instance)
@@ -278,15 +329,18 @@ def process(creds):
                     write_record(file_instance)
                     driver_script(name,file_instance,file_coll)
             
-    #print(file_coll)
-    #copy = {}
-    # detect if there is any file has been delete
+
     for key in file_coll:
         for fi in file_coll[key][:]:
             if fi in compare_coll:
                 continue
                 #copy[key].append(fi)
             else:
+                delete_name = fi.get_name()
+                delete(delete_name)
+                delete_encoder(delete_name)
+                delete_packager(delete_name)
+                delete_html(delete_name)
                 fi.set_status('deleted')
                 write_record(fi)
                 file_coll[key].remove(fi)
@@ -325,4 +379,13 @@ env = os.path.abspath('./')
 env = env.split('/')[-1]
 if env == 'test':
    env_path = '../'
+parser = argparse.ArgumentParser(prog='ndn_script.py')
+parser.add_argument('-v', choices=['info','debug'], metavar='version',
+                        nargs=1,help='valid version should be info or debug')
+result = parser.parse_args(sys.argv[1:])
+if result.v ==None:
+        print ('Missing valid argument')
+        parser.print_help(sys.stderr)
+        sys.exit(1)
+version = result.v
 start()
