@@ -28,6 +28,7 @@ def download(id,creds):
     directorys = directory.encode("utf-8")
     update_token(creds)
     g = directorys + u'gdrive --access-token ' + creds.token + u' download --force ' +id 
+    print(g)
     process = subprocess.Popen(g, shell=True, stdout=subprocess.PIPE)
     output, err = process.communicate()
     if version == 'debug':
@@ -151,7 +152,7 @@ def check_status(file_coll,creds,items):
     for key in file_coll:
         for file_instance in file_coll[key]:
             cur_file = search_items(file_instance.get_parent(),items)
-            directory = 'cd '+cur_file+' &&'
+            directory = 'cd '+cur_file+' && '
             status = file_instance.get_status()
             name = file_instance.get_name()
             file_id = file_instance.get_id()
@@ -268,6 +269,8 @@ def search_items(id,items):
              return name
 def process(creds):
     #gdrive stuff to get meta data from each file
+    global cur_file
+    global directory
     update_token(creds)
     g = u'gdrive --access-token ' + creds.token + u' list'
     process = subprocess.Popen(g, shell=True, stdout=subprocess.PIPE)
@@ -307,8 +310,6 @@ def process(creds):
                if file_id not in file_coll:
                     file_coll[file_id] = []
                     if not os.path.exists(name):
-                       cur_file = name
-                       directory = 'cd '+cur_file+' &&'
                        os.mkdir(name)
                continue
             if mime_type.find('video') == -1:
@@ -326,19 +327,19 @@ def process(creds):
                   if re == file_instance:
                     find = True
                     # user modifies the name of file
-                    if file_instance > re:
+                    if file_instance.get_time()>re.get_time():
                         change = True
                         re.set_time(time)
                         dump_data(file_coll)
                         write_record(re)
                         print("97th")
                         cur_file = search_items(parent,items)
-                        directory = 'cd '+cur_file+' &&'
+                        directory = 'cd '+cur_file+' && '
                         change_name(cur_file + '/' + re.get_name(),cur_file + '/' + file_instance.get_name())
                if not find:
                     # new file insert into this folder
                     cur_file = search_items(parent,items)
-                    directory = 'cd '+cur_file+' &&'
+                    directory = 'cd '+cur_file+' && '
                     file_coll[parent].append(file_instance)
                     dump_data(file_coll)
                     write_record(file_instance)
@@ -355,12 +356,13 @@ def process(creds):
                 file_coll[parent].append(file_instance)
                 cur_file = search_items(parent,items)
                 if not os.path.exists(cur_file):
-                       directory = 'cd '+cur_file+' &&'
-                       os.mkdir(name)
+                       os.mkdir(cur_file)
+                directory = 'cd '+cur_file+' && '
                  # when it is initial
                 dump_data(file_coll)
                 write_record(file_instance)
                 print("106th")
+                print(directory)
                 rv = download(file_id,creds)
                 if rv == 0:
                     file_instance.set_status("download")
@@ -423,10 +425,10 @@ parser.add_argument('-v', choices=['info','debug'], metavar='version',
                         nargs=1,help='valid version should be info or debug')
 result = parser.parse_args(sys.argv[1:])
 if result.v ==None:
-        print ('Missing valid argument')
         parser.print_help(sys.stderr)
         sys.exit(1)
 version = result.v
+
 cur_file = ''
 directory = ''
 start()
