@@ -18,14 +18,14 @@ public:
 		// all numbers from now on will be greater than 0, no point in continuing
 		if (nums[i] > 0) break;
         
-        if(nums[i] + nums[i+1] + nums[i+2] >0 ){
-          //  std::cout << "16th" <<std::endl;
-            break;
-        } 
-        if(nums[i] + nums[n_size-1] + nums[n_size-2] < 0) {
-          //  std::cout << "20th" <<std::endl;
-            continue;
-        }
+                if(nums[i] + nums[i+1] + nums[i+2] >0 ){
+                    //  std::cout << "16th" <<std::endl;
+                       break;
+                } 
+                if(nums[i] + nums[n_size-1] + nums[n_size-2] < 0) {
+                    //  std::cout << "20th" <<std::endl;
+                          continue;
+                }
 
 		if (i > 0 and nums[i] == nums[i-1]) continue;
        
