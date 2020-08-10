@@ -13,7 +13,7 @@ from watchdog.observers import Observer
 SCOPES = ['https://www.googleapis.com/auth/drive']
 
 
-def insertion():
+def update():
     creds = None
     if os.path.exists('token.pickle'):
         with open('token.pickle', 'rb') as token:
@@ -30,7 +30,8 @@ def insertion():
     # folder id for testing 1hQaB1EKaeiaqOVCQ_PGCR9teksRsGjaH
     # gdrive upload --parent 0B3X9GlR6EmbnY1RLVTk5VUtOVkk gdrive-osx-x64
     g = u'gdrive --access-token ' + creds.token + \
-        u' upload --parent 1hQaB1EKaeiaqOVCQ_PGCR9teksRsGjaH game1.flv'
+        u' update 1OA8YUbr-BiTDczna_FgzdrZov7jAgyWD game2.flv'
+    print(g)
     process = subprocess.Popen(g, shell=True, stdout=subprocess.PIPE)
     output, err = process.communicate()
     # print(output)
@@ -40,11 +41,10 @@ def insertion():
 
 def wait():
     mutex = Lock()
-    prefix = 'game1'
-    nums = ['./zmj/game1', './zmj/game1.html', './zmj/game1.flv.incomplete', './zmj/' + prefix+'_h264_1080p.mp4', './zmj/'+prefix +
-            '_h264_240p.mp4', './zmj/'+prefix+'_h264_360p.mp4', './zmj/'+prefix+'_h264_480p.mp4', './zmj/'+prefix+'_h264_720p.mp4', './zmj']
+    prefix = 'game2'
+    nums = ['./zmj']
     observer = Observer()
-    event_handler = FileEventHandler(nums, mutex, 'insert')
+    event_handler = FileEventHandler(nums, mutex, 'update')
     observer.schedule(event_handler, '.', True)
     observer.start()
     break_condition = False
@@ -60,12 +60,16 @@ def wait():
             break
     print('end')
     process.kill()
+    nums = ['./zmj/game2', './zmj/game2.html', './zmj/game2.flv', './zmj/' + prefix+'_h264_1080p.mp4', './zmj/' +
+            prefix+'_h264_240p.mp4', './zmj/'+prefix+'_h264_360p.mp4', './zmj/'+prefix+'_h264_480p.mp4', './zmj/'+prefix+'_h264_720p.mp4']
+    for i in nums:
+        assert(os.path.exists(i))
     sys.exit(0)
 
 
 pwd = os.path.abspath('../') + '/'+'ndn_script.py -v info'
 print(pwd)
-insertion()
+update()
 #t1 = threading.Thread(target=wait, args=())
 # t1.start()
 cmd = 'python '+pwd
