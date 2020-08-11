@@ -13,7 +13,7 @@ from watchdog.observers import Observer
 SCOPES = ['https://www.googleapis.com/auth/drive']
 
 
-def insertion():
+def delete():
     creds = None
     if os.path.exists('token.pickle'):
         with open('token.pickle', 'rb') as token:
@@ -27,8 +27,7 @@ def insertion():
             creds = flow.run_local_server(port=0)
         with open('token.pickle', 'wb') as token:
             pickle.dump(creds, token)
-
-    # find the folder zmj's id and upload 
+    # find the file game1
     g = u'gdrive --access-token ' + creds.token + u' list'
     process = subprocess.Popen(g, shell=True, stdout=subprocess.PIPE)
     output, err = process.communicate()
@@ -41,21 +40,18 @@ def insertion():
         process = subprocess.Popen(g, shell=True, stdout=subprocess.PIPE)
         output, err = process.communicate()
         items.append(output)
-    parent_id = None
+    game1_id = None
     for item in items:
             item = item.split('\n')[:-1]
             file_id = item[0][item[0].find(':')+2:]
             name = item[1][item[1].find(':')+2:]
-            mime_type = item[3][item[3].find(':')+2:]
-           # print(name,time,parent,file_id,mime_type,file_id)
-            if mime_type == 'application/vnd.google-apps.folder' and name == 'zmj':
-               parent_id = file_id
-               break
-    
-    
+            if name =='game1.flv':
+                game1_id = file_id
+                break
     
     g = u'gdrive --access-token ' + creds.token + \
-        u' upload --parent '+ parent_id + u' game1.flv'
+        u' delete ' + game1_id
+    print(g)
     process = subprocess.Popen(g, shell=True, stdout=subprocess.PIPE)
     output, err = process.communicate()
     # print(output)
@@ -65,15 +61,17 @@ def insertion():
 
 def wait():
     mutex = Lock()
-    prefix = 'game1'
-    if os.path.exists('/zmj'):
-        nums = ['./zmj/game1', './zmj/game1.html', './zmj/game1.flv.incomplete', './zmj/' + prefix+'_h264_1080p.mp4', './zmj/'+prefix +
+    if os.path.exists('zmj/game1'):
+         prefix = 'game1'
+         nums = ['./zmj/game1', './zmj/game1.html', './zmj/game1.flv', './zmj/' + prefix+'_h264_1080p.mp4', './zmj/'+prefix +
             '_h264_240p.mp4', './zmj/'+prefix+'_h264_360p.mp4', './zmj/'+prefix+'_h264_480p.mp4', './zmj/'+prefix+'_h264_720p.mp4']
+    # if you alreay ran the update test
     else:
-        nums = ['./zmj/game1', './zmj/game1.html', './zmj/game1.flv.incomplete', './zmj/' + prefix+'_h264_1080p.mp4', './zmj/'+prefix +
-            '_h264_240p.mp4', './zmj/'+prefix+'_h264_360p.mp4', './zmj/'+prefix+'_h264_480p.mp4', './zmj/'+prefix+'_h264_720p.mp4', './zmj']
+         prefix = 'game2'
+         nums = ['./zmj/game2', './zmj/game2.html', './zmj/game2.flv', './zmj/' + prefix+'_h264_1080p.mp4', './zmj/'+prefix +
+            '_h264_240p.mp4', './zmj/'+prefix+'_h264_360p.mp4', './zmj/'+prefix+'_h264_480p.mp4', './zmj/'+prefix+'_h264_720p.mp4']
     observer = Observer()
-    event_handler = FileEventHandler(nums, mutex, 'insert')
+    event_handler = FileEventHandler(nums, mutex, 'delete')
     observer.schedule(event_handler, '.', True)
     observer.start()
     break_condition = False
@@ -89,12 +87,14 @@ def wait():
             break
     print('end')
     process.kill()
+    arr = [f for f in os.listdir('./zmj') if not f.startswith('.')]
+    assert(len(arr) == 0)
     sys.exit(0)
 
 
 pwd = os.path.abspath('../') + '/'+'ndn_script.py -v info'
 print(pwd)
-insertion()
+delete()
 #t1 = threading.Thread(target=wait, args=())
 # t1.start()
 cmd = 'python '+pwd

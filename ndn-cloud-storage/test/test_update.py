@@ -27,10 +27,30 @@ def update():
             creds = flow.run_local_server(port=0)
         with open('token.pickle', 'wb') as token:
             pickle.dump(creds, token)
-    # folder id for testing 1hQaB1EKaeiaqOVCQ_PGCR9teksRsGjaH
-    # gdrive upload --parent 0B3X9GlR6EmbnY1RLVTk5VUtOVkk gdrive-osx-x64
+    # find the file game1 
+    g = u'gdrive --access-token ' + creds.token + u' list'
+    process = subprocess.Popen(g, shell=True, stdout=subprocess.PIPE)
+    output, err = process.communicate()
+    output_list = output.split('\n')[1:-1]
+    items = []
+    for file_info in output_list:
+        file_id = file_info.split()[0]
+       # file_id = file_id.encode("utf-8")
+        g = u'gdrive --access-token '+creds.token + u' info ' + file_id
+        process = subprocess.Popen(g, shell=True, stdout=subprocess.PIPE)
+        output, err = process.communicate()
+        items.append(output)
+    game1_id = None
+    for item in items:
+            item = item.split('\n')[:-1]
+            file_id = item[0][item[0].find(':')+2:]
+            name = item[1][item[1].find(':')+2:]
+            if name =='game1.flv':
+                game1_id = file_id
+                break
+    
     g = u'gdrive --access-token ' + creds.token + \
-        u' update 1OA8YUbr-BiTDczna_FgzdrZov7jAgyWD game2.flv'
+        u' update '+ game1_id +u' game2.flv'
     print(g)
     process = subprocess.Popen(g, shell=True, stdout=subprocess.PIPE)
     output, err = process.communicate()

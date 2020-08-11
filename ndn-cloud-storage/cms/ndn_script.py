@@ -56,7 +56,7 @@ def dump_data(file_coll):
 
 def load_data():
     rc = None
-    with open(env_path + 'data-s', 'wr') as token:
+    with open(env_path + 'data-s', 'rb') as token:
         rc = pickle.load(token)
     return rc
 
@@ -74,7 +74,7 @@ def driver_script(file_name, file_instance, file_coll):
 
 
 def chunker(file_name, file_instance, file_coll):
-    pwd = os.path.abspath(env_path + cur_file)
+    pwd = os.path.abspath(env_path + owner)
     file_name_prefix = file_name[:file_name.find('.')]
     base = '/ndn/web/video'
     version = '1'
@@ -164,8 +164,8 @@ def check_all_encode(prefix):
 
 
 def check_encoded_number(prefix):
-    encoded_arr = [cur_file + '/' + prefix+'_h264_1080p.mp4', cur_file + '/' + prefix+'_h264_240p.mp4', cur_file +
-                   '/'+prefix+'_h264_360p.mp4', cur_file + '/' + prefix+'_h264_480p.mp4', cur_file + '/' + prefix+'_h264_720p.mp4']
+    encoded_arr = [owner + '/' + prefix+'_h264_1080p.mp4', owner + '/' + prefix+'_h264_240p.mp4', owner +
+                   '/'+prefix+'_h264_360p.mp4', owner + '/' + prefix+'_h264_480p.mp4', owner + '/' + prefix+'_h264_720p.mp4']
     num = 0
     for i in encoded_arr:
         if os.path.exists(i):
@@ -174,10 +174,12 @@ def check_encoded_number(prefix):
 
 
 def check_status(file_coll, creds, items):
+    global directory
+    global owner
     for key in file_coll:
         for file_instance in file_coll[key]:
-            cur_file = search_items(file_instance.get_parent(), items)
-            directory = 'cd '+cur_file+' && '
+            owner = search_items(file_instance.get_parent(), items)
+            directory = 'cd '+owner+' && '
             status = file_instance.get_status()
             name = file_instance.get_name()
             file_id = file_instance.get_id()
@@ -185,11 +187,13 @@ def check_status(file_coll, creds, items):
             prefix = name[:name.find('.')]
             if status == 'initial':
                 download(file_id, creds)
+                file_instance.set_status("download")
+                dump_data(file_coll)
                 driver_script(name, file_instance, file_coll)
 
             elif status == 'download':
                 # todo check if the file exist and process
-                if os.path.exists(cur_file+'/'+name):
+                if os.path.exists(owner+'/'+name):
                     pass
                 else:
                     download(file_id, creds)
@@ -204,14 +208,14 @@ def check_status(file_coll, creds, items):
                     driver_script(name, file_instance, file_coll)
                     continue
                 # in the middle of package
-                if os.path.exists(cur_file + '/' + prefix):
+                if os.path.exists(owner + '/' + prefix):
                     delete_packager(name)
                 packaged(name, file_instance, file_coll)
                 chunker(name, file_instance, file_coll)
                 html(name, file_instance, file_coll)
 
             elif status == 'packaged':
-                if os.path.exists(cur_file + '/' + prefix):
+                if os.path.exists(owner + '/' + prefix):
                     pass
                 else:
                     packaged(name, file_instance, file_coll)
@@ -223,12 +227,12 @@ def check_status(file_coll, creds, items):
             elif status == 'chunked':
                 # todo we need to check MongoDB before generate html
                 # in the middle of html
-                if os.path.exists(cur_file + '/' + web):
+                if os.path.exists(owner + '/' + web):
                     delete_html(name)
                 html(name, file_instance, file_coll, True)
             # only one left is html but we need to have two
             else:
-                if not os.path.exists(cur_file + '/' + web):
+                if not os.path.exists(owner + '/' + web):
                     html(name, file_instance, file_coll, True)
                 else:
                     if file_instance.get_status() == 'html and js first':
@@ -238,14 +242,16 @@ def check_status(file_coll, creds, items):
 
 def delete(file_name):
     # delete it self
-    file_name = cur_file + '/' + file_name
+    file_name = owner + '/' + file_name
+    print(file_name)
     if os.path.exists(file_name):
         os.remove(file_name)
 
 
 def delete_packager(file_name):
     prefix = file_name[:file_name.find('.')]
-    prefix = cur_file + '/' + prefix
+    prefix = owner + '/' + prefix
+    print(prefix)
     if os.path.exists(prefix):
         shutil.rmtree(prefix)
 
@@ -253,18 +259,20 @@ def delete_packager(file_name):
 def delete_encoder(file_name):
     # delete the encoder
     prefix = file_name[:file_name.find('.')]
-    encoded_arr = encoded_arr = [cur_file + '/' + prefix+'_h264_1080p.mp4', cur_file + '/' + prefix+'_h264_240p.mp4',
-                                 cur_file + '/'+prefix+'_h264_360p.mp4', cur_file + '/' + prefix+'_h264_480p.mp4', cur_file + '/' + prefix+'_h264_720p.mp4']
+    encoded_arr = encoded_arr = [owner + '/' + prefix+'_h264_1080p.mp4', owner + '/' + prefix+'_h264_240p.mp4',
+                                 owner + '/'+prefix+'_h264_360p.mp4', owner + '/' + prefix+'_h264_480p.mp4', owner + '/' + prefix+'_h264_720p.mp4']
     count = 5
     for i in range(0, count):
+        print(encoded_arr[i])
         if os.path.exists(encoded_arr[i]):
             os.remove(encoded_arr[i])
 
 
 def delete_html(file_name):
     prefix = file_name[:file_name.find('.')]
-    prefix = cur_file + '/' + prefix
+    prefix = owner + '/' + prefix
     html_file = prefix+'.html'
+    print(html_file)
     if os.path.exists(html_file):
         os.remove(html_file)
 
@@ -272,20 +280,20 @@ def delete_html(file_name):
 def change_name(old, new):
     old_prefix = old[:old.find('.')]
     new_prefix = new[:new.find('.')]
-    old_encoded_arr = [cur_file + '/' + old_prefix+'_h264_1080p.mp4', cur_file+'/' + old_prefix+'_h264_240p.mp4', cur_file +
-                       '/'+old_prefix+'_h264_360p.mp4', cur_file+'/'+old_prefix+'_h264_480p.mp4', cur_file+'/'+old_prefix+'_h264_720p.mp4']
-    new_encoded_arr = [cur_file + '/'+new_prefix+'_h264_1080p.mp4', cur_file+'/'+new_prefix+'_h264_240p.mp4', cur_file +
-                       '/'+new_prefix+'_h264_360p.mp4', cur_file+'/'+new_prefix+'_h264_480p.mp4', cur_file+'/'+new_prefix+'_h264_720p.mp4']
+    old_encoded_arr = [owner + '/' + old_prefix+'_h264_1080p.mp4', owner+'/' + old_prefix+'_h264_240p.mp4', owner +
+                       '/'+old_prefix+'_h264_360p.mp4', owner+'/'+old_prefix+'_h264_480p.mp4', owner+'/'+old_prefix+'_h264_720p.mp4']
+    new_encoded_arr = [owner + '/'+new_prefix+'_h264_1080p.mp4', owner+'/'+new_prefix+'_h264_240p.mp4', owner +
+                       '/'+new_prefix+'_h264_360p.mp4', owner+'/'+new_prefix+'_h264_480p.mp4', owner+'/'+new_prefix+'_h264_720p.mp4']
     # name of file replacement
-    os.rename(cur_file + '/' + old, cur_file + '/' + new)
+    os.rename(owner + '/' + old, owner + '/' + new)
     # encoder replacement
     for i in range(0, 5):
         os.rename(old_encoded_arr[i], new_encoded_arr[i])
     # package replacement
-    os.rename(cur_file + '/' + old_prefix, cur_file + '/' + new_prefix)
+    os.rename(owner + '/' + old_prefix, owner + '/' + new_prefix)
     # html replacement
-    os.rename(cur_file + '/' + old_prefix + '.html',
-              cur_file + '/' + new_prefix+'.html')
+    os.rename(owner + '/' + old_prefix + '.html',
+              owner + '/' + new_prefix+'.html')
 
 
 def search_items(id, items):
@@ -299,7 +307,7 @@ def search_items(id, items):
 
 def process(creds):
     # gdrive stuff to get meta data from each file
-    global cur_file
+    global owner
     global directory
     update_token(creds)
     g = u'gdrive --access-token ' + creds.token + u' list'
@@ -309,7 +317,7 @@ def process(creds):
     items = []
     for file_info in output_list:
         file_id = file_info.split()[0]
-        file_id = file_id.encode("utf-8")
+       # file_id = file_id.encode("utf-8")
         update_token(creds)
         g = u'gdrive --access-token '+creds.token + u' info ' + file_id
         process = subprocess.Popen(g, shell=True, stdout=subprocess.PIPE)
@@ -319,6 +327,7 @@ def process(creds):
     if os.path.exists(env_path + 'data-s'):
         with open(env_path + 'data-s', 'rb') as token:
             file_coll = pickle.load(token)
+            print(file_coll)
         check_status(file_coll, creds, items)
         # print(file_coll)
     else:
@@ -367,14 +376,14 @@ def process(creds):
                             dump_data(file_coll)
                             write_record(re)
                             print("97th")
-                            cur_file = search_items(parent, items)
-                            print(cur_file)
-                            directory = 'cd '+cur_file+' && '
+                            owner = search_items(parent, items)
+                            print(owner)
+                            directory = 'cd '+owner+' && '
                             change_name(old_name, file_instance.get_name())
                 if not find:
                     # new file insert into this folder
-                    cur_file = search_items(parent, items)
-                    directory = 'cd '+cur_file+' && '
+                    owner = search_items(parent, items)
+                    directory = 'cd '+owner+' && '
                     file_coll[parent].append(file_instance)
                     dump_data(file_coll)
                     write_record(file_instance)
@@ -389,10 +398,10 @@ def process(creds):
             else:
                 file_coll[parent] = []
                 file_coll[parent].append(file_instance)
-                cur_file = search_items(parent, items)
-                if not os.path.exists(cur_file):
-                    os.mkdir(cur_file)
-                directory = 'cd '+cur_file+' && '
+                owner = search_items(parent, items)
+                if not os.path.exists(owner):
+                    os.mkdir(owner)
+                directory = 'cd '+owner+' && '
                 # when it is initial
                 dump_data(file_coll)
                 write_record(file_instance)
@@ -412,6 +421,8 @@ def process(creds):
                 # copy[key].append(fi)
             else:
                 delete_name = fi.get_name()
+                owner = search_items(fi.get_parent(),items)
+                directory = 'cd '+owner+' && '
                 delete(delete_name)
                 delete_encoder(delete_name)
                 delete_packager(delete_name)
@@ -465,6 +476,6 @@ if result.v == None:
     sys.exit(1)
 version = result.v
 
-cur_file = ''
+owner = ''
 directory = ''
 start()

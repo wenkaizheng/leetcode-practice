@@ -43,3 +43,17 @@ class FileEventHandler(FileSystemEventHandler):
                 if event.src_path in self.num:
                     self.num.remove(event.src_path)
                 self.mutex.release()
+    def on_deleted(self, event):
+        if self.test == 'delete':
+            if event.is_directory:
+                self.mutex.acquire()
+                print("directory deleted:{0}".format(event.src_path))
+                if event.src_path in self.num:
+                    self.num.remove(event.src_path)
+                self.mutex.release()
+            else:
+                self.mutex.acquire()
+                print("file deleted:{0}".format(event.src_path))
+                if event.src_path in self.num:
+                    self.num.remove(event.src_path)
+                self.mutex.release()
