@@ -212,7 +212,7 @@ def check_status(file_coll, creds, items):
                     delete_packager(name)
                 packaged(name, file_instance, file_coll)
                 chunker(name, file_instance, file_coll)
-                html(name, file_instance, file_coll)
+                html(name, file_instance, file_coll,True)
 
             elif status == 'packaged':
                 if os.path.exists(owner + '/' + prefix):
@@ -222,7 +222,7 @@ def check_status(file_coll, creds, items):
                 # todo wait for MongoDB stuff
                 # in the middle of chunck
                 chunker(name, file_instance, file_coll)
-                html(name, file_instance, file_coll)
+                html(name, file_instance, file_coll,True)
 
             elif status == 'chunked':
                 # todo we need to check MongoDB before generate html
