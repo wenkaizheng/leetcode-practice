@@ -4,26 +4,27 @@ using namespace std;
 class Solution {
 public:
     string multiply(string num1, string num2) {
-        size_t len1(num1.size());
-		size_t len2(num2.size());
-		string result(len1 + len2, '0');
-		for (size_t i = len1; i >= 1; --i) {
-			int carry(0);
-			for (size_t j = len2; j >= 1; --j) {
-				int value = (num1[i - 1] - '0') * (num2[j - 1] - '0');
-				value += result[i + j - 1] - '0';
-				value += carry;
-				result[i + j - 1] = value % 10 + '0';
-				carry = value / 10;
-			}
-			result[i - 1] = carry + '0';
-		}
+       
+        int len1 = (int)num1.size();
+	int len2 = (int) num2.size();
+	string result(len1 + len2, '0');
+	for (int i = len1-1; i >= 0; --i) {
+	      for (int j = len2-1; j >= 0; --j) {
+			//	int value = (num1[i] - '0') * (num2[j] - '0')+(result[i + j + 1 ] - '0');
+                int v1 = num1[i] - '0';
+                int v2 = num2[j] - '0';
+                int v3 = result[i+j+1] -'0';
+                int value = v1*v2 + v3;
+		result[i + j ] += value / 10;
+		result[i + j + 1] = (value % 10)  + '0';
+	    }
+	}
         cout << result << endl;
-		for (size_t i = 0; i < len1 + len2; ++i) {
-			if (result[i] != '0')
-				return result.substr(i, len1 + len2 - i);
-		}
-		return string(1, '0');
+        int  p = 0;
+        while (p < len1+len2-1 && result[p] == '0'){
+            p++;
+        }
+        return result.substr(p, len1 + len2 -p);
 	
     }
 };
