@@ -32,6 +32,25 @@ public:
     }
 };
 
+class Solution3 {
+public:
+    int change(int amount, vector<int>& coins) {
+
+        int dp[amount + 1];
+        memset(dp,0,sizeof(dp));
+        dp[0] = 1;
+        for (int i = 1; i<=amount; i++) {
+            for (const auto &c : coins) {
+                if (i >= c) {
+                    dp[i] += dp[i - c];
+                }
+            }
+        }
+        return dp[amount];
+
+    }
+};
+
 int main(){
     Solution s = Solution(); 
     vector<int> a {1,2,5};
@@ -39,4 +58,6 @@ int main(){
     cout << s.coinChange(a,5) <<endl;
     Solution2 s2 = Solution2();
     cout << s2.change(5,c) <<endl;
+    Solution3 s3 = Solution3();
+    cout << s3.change(5,c) <<endl;
 }
