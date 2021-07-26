@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <deque>
+#include <unordered_map>
 using namespace std;
 class Solution {
 public:
@@ -62,6 +63,25 @@ public:
         return (ans != INT_MAX ) ? ans : 0;
     }
 };
+class Solution3 {
+public:
+    int characterReplacement(string s, int k) {
+        if(s.length()==0) return 0;
+        int low = 0, most_frequent_count = 0, max_length = 1;
+        unordered_map<char, int> letters;
+        for(int high = 0; high < s.length(); high++) {
+            int current_letter_count = ++letters[s[high]];
+            most_frequent_count = max(most_frequent_count, current_letter_count);
+            while(high-low+1 - most_frequent_count > k) {
+                letters[s[low]]--;
+                low++;
+            }
+            max_length = max(max_length, high-low+1);
+        }
+        return max_length;
+
+    }
+};
 
 int main(){
     vector<int> list2 {2,3,1,2,4,3};
@@ -79,5 +99,10 @@ int main(){
     string a = "abcde";
     string b = "bcdf";
     cout << s1.equalSubstring(a,b,3) <<endl;
+
+    Solution3 s3;
+    cout << s3.characterReplacement("AABABBA",1) << endl;
+    cout << s3.characterReplacement("ABAB",2) << endl;
+    return 0;
 
 }
