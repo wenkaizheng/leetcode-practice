@@ -3,14 +3,15 @@ class Solution(object):
     def PredictTheWinner(self, nums):
        
          dp = [[0] * len(nums) for _ in range(len(nums))]
-         for s in range(len(nums)):
-             for i in range(len(nums)-s):
-                 j = i + s
-                 if i == j:
-                     dp[i][i] = nums[i]
-                 else:
-                     dp[i][j] = max(nums[j] - dp[i][j-1], nums[i] - dp[i+1][j])
+         for i in range(len(nums)):
+                dp[i][i] = nums[i]
+         for lens in range(1,len(nums)):
+             i = 0
+             for j in range(lens,len(nums)):
+                 dp[i][j] = max(nums[j] - dp[i][j-1], nums[i] - dp[i+1][j])
+                 i+= 1   
          return dp[0][-1] >= 0
+        
 
 class Solution1(object):
     def canIWin(self, maxChoosableInteger, desiredTotal):
