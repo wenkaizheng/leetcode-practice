@@ -22,4 +22,4 @@ class Solution:
         
         return dp[0][-1]
 s = Solution()
-print(longestPalindromeSubseq("bbbab"))
+print(s.longestPalindromeSubseq("bbbab"))
