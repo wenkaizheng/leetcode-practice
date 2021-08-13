@@ -55,6 +55,20 @@ class Solution4:
             if score - 1 in seen:
                 res = max(res, i - seen[score - 1])
         return res   
+#SAME NUMBER WOTH 0 AND ZERO
+class Solution5:
+    def findMaxLength(self,nums):
+        res = sums = 0
+        n = len(nums)
+        m = {}
+        m[0] = -1
+        for i in range(0,n):
+            sums += 1 if nums[i] else -1
+            if sums in m:
+                res = max(res,i-m[sums])
+            else:
+                m[sums] = i
+        return res            
 
 s = Solution()
 print(s.longestConsecutive([100,4,200,1,3,2]))
@@ -66,4 +80,6 @@ s3 = Solution3()
 print(s3.longestSubsequence([1,5,7,8,5,3,4,2,1],-2))
 s4 = Solution4()
 print(s4.longestWPI([9,9,6,0,6,6,9]))
+s5 = Solution5()
+print(s5.findMaxLength([0,1,1,0,0,1,1]))
                
