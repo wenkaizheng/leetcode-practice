@@ -21,7 +21,7 @@ public:
 class Solution1 {
 public:
     int equalSubstring(string s, string t, int k) {
-        int n = s.length(), i = 0, j;
+        int n = s.length(), j;
         int diff[n];
         for (j = 0; j < n; ++j) {
             diff[j] = (s[j] - t[j]) >0? s[j] - t[j]: t[j]-s[j] ;
@@ -83,6 +83,30 @@ public:
     }
 };
 
+class Solution4 {
+public:
+    int maxSatisfied(vector<int>& customers, vector<int>& grumpy, int X) {
+        int sum = 0, start = 0, total = 0, max_sum = 0;
+        for(int i = 0; i < customers.size(); i++){
+            if(i - start < X){
+                //Window size smaller than X, add entry
+                if(grumpy[i]) sum += customers[i];
+            }else{
+                //Window size exceeds, move window
+                if(grumpy[start]) sum -= customers[start];
+                if(grumpy[i]) sum += customers[i];
+                start++;
+            }
+            //Keep track of max_sum of unsatisfied customers in sliding window
+            max_sum = max(max_sum, sum);
+            //Keep track of total customers satisfied
+            if(!grumpy[i]) total += customers[i];
+        }
+
+        return total+max_sum;
+    }
+};
+
 int main(){
     vector<int> list2 {2,3,1,2,4,3};
     Solution2 s2;
@@ -103,6 +127,11 @@ int main(){
     Solution3 s3;
     cout << s3.characterReplacement("AABABBA",1) << endl;
     cout << s3.characterReplacement("ABAB",2) << endl;
+
+    Solution4 s4;
+    vector<int> test{1,0,1,2,1,1,7,5};
+    vector<int> test1{0,1,0,1,0,1,0,1};
+    std::cout << s4.maxSatisfied(test,test1,3) << std::endl;
     return 0;
 
 }
