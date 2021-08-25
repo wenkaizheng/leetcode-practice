@@ -2,6 +2,7 @@
 #include <iostream>
 #include <array>
 #include <string>
+#include <numeric>
 using namespace std;
 class Solution {
 public:
@@ -51,13 +52,46 @@ public:
     }
 };
 
+class Solution4 {
+public:
+    bool canPartition(vector<int>& nums) {
+        int sum = accumulate(nums.begin(), nums.end(), 0), target = sum >> 1;
+        if (sum & 1) return false;
+        vector<int> dp(target + 1, 0);
+        dp[0] = 1;
+        for(auto num : nums)
+            for(int i = target; i >= num; i--)
+                dp[i] = dp[i] || dp[i - num];
+        return dp[target];
+    }
+};
+
+class Solution5 {
+public:
+    int canPartition(vector<int>& nums) {
+        int sum = accumulate(nums.begin(), nums.end(), 0), target = sum >> 1;
+        if (sum & 1) return false;
+        vector<int> dp(target + 1, 0);
+        dp[0] = 1;
+        for(auto num : nums)
+            for(int i = target; i >= num; i--)
+                dp[i] += dp[i - num];
+        return dp[target];
+    }
+};
+
 int main(){
     Solution s = Solution(); 
     vector<int> a {1,2,5};
     vector<int> c = {1,2,5};
+    vector<int> d {1,5,11,5,3,3};
     cout << s.coinChange(a,5) <<endl;
     Solution2 s2 = Solution2();
     cout << s2.change(5,c) <<endl;
     Solution3 s3 = Solution3();
     cout << s3.change(5,c) <<endl;
+    Solution4 s4 = Solution4();
+    cout << s4.canPartition(d) << endl;
+    Solution5 s5 = Solution5();
+    cout << s5.canPartition(d) << endl;
 }
