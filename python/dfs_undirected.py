@@ -46,7 +46,7 @@ class Solution1(object):
         def dfs(x, y, visited ):
             # neither x not y exists
             
-            
+            visited.add(x)
             # x points to y
             if y in graph[x]:
                 return graph[x][y]
