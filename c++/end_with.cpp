@@ -10,7 +10,7 @@ public:
             for (int j = 0; j < i; ++j) {
                 if (nums[i] <= nums[j]) continue;
                 if (len[i] == len[j] + 1) cnt[i] += cnt[j];
-                else if (len[i] < len[j] + 1) {
+                else if (len[i] == len[j]) {
                     len[i] = len[j] + 1;
                     cnt[i] = cnt[j];
                 }
@@ -49,7 +49,36 @@ public:
 
     }
 };
+class Solution2 {
+public:
+    vector<int> largestDivisibleSubset(vector<int>& nums)
+    {
+        std::sort(nums.begin(), nums.end());
 
+        std::vector<int> dp(nums.size(), 1);
+        std::vector<int> pre(nums.size(), -1);
+
+        for(int i = 1; i < nums.size(); ++i){
+            for(int j = 0; j < i; ++j){
+                if(nums[i] % nums[j] == 0 && dp[j] == dp[i]){
+                    dp[i] = dp[j] + 1;
+                    pre[i] = j;
+                }
+            }
+        }
+
+        int maxindex = std::distance(dp.begin(), std::max_element(dp.begin(), dp.end()));
+        std::vector<int> result;
+
+        while(maxindex >= 0){
+            result.push_back(nums[maxindex]);
+            maxindex = pre[maxindex];
+        }
+
+        std::reverse(result.begin(), result.end());
+        return result;
+    }
+};
 int main(){
     Solution s = Solution();
     vector<int> test = {1,3,5,4,7};
@@ -58,5 +87,11 @@ int main(){
     vector<int> test2 = {3,2,1,4,7};
     Solution1 s1 = Solution1();
     std::cout << s1.findLength(test1,test2) << std::endl;
+    Solution2 s2 = Solution2();
+    vector<int> test3  = {1,2,4,8};
+    for (auto& i: s2.largestDivisibleSubset(test3)){
+        std::cout << i;
+    }
+    std::cout << "\n";
     return 0;
 }
