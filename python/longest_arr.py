@@ -46,10 +46,12 @@ class Solution4:
     def longestWPI(self, hours):
         res = score = 0
         seen = {}
+        seen[0] = -1
         for i, h in enumerate(hours):
             score = score + 1 if h > 8 else score - 1
             if score > 0:
-                res = i + 1
+                res = i - seen[0]
+                continue
             if score not in seen:
                 seen[score] = i
             if score - 1 in seen:
