@@ -70,7 +70,23 @@ class Solution5:
                 res = max(res,i-m[sums])
             else:
                 m[sums] = i
-        return res            
+        return res   
+
+
+class Solution6:
+    def maxSubArrayLen(self,nums,k):
+        res = 0
+        sums = 0
+        m = {}
+        m[0] = -1
+        for i in range(0,len(nums)):
+            sums += nums[i]
+            if sums not in m:
+                m[sums] = i     
+            if sums -k in m:
+                res = max(res,i-m[sums-k])      
+                
+        return res                     
 
 s = Solution()
 print(s.longestConsecutive([100,4,200,1,3,2]))
@@ -84,4 +100,6 @@ s4 = Solution4()
 print(s4.longestWPI([9,9,6,0,6,6,9]))
 s5 = Solution5()
 print(s5.findMaxLength([0,1,1,0,0,1,1]))
+s6 = Solution6()
+print(s6.maxSubArrayLen([1,-1,5,-2,3],3))
                
