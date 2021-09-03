@@ -41,27 +41,32 @@ class Solution1(object):
         for (x, y), val in zip(equations,values):
             graph[x][y] = val
             graph[y][x] = 1.0 / val
+        print(graph)
         
         # Step 2. DFS function
         def dfs(x, y, visited ):
             # neither x not y exists
+            if (x,y) in visited:
+                return visited[(x,y)]
+           # visited.add((x,y))
             
-            visited.add(x)
             # x points to y
             if y in graph[x]:
+                visited[(x,y)] = graph[x][y]
                 return graph[x][y]
             
             # x maybe connected to y through other nodes
             # use dfs to see if there is a path from x to y
+            visited[(x,y)] = -1
             for i in graph[x]:
-                if i not in visited:
-                    visited.add(i)
-                    temp = dfs(i, y, visited)
-                    if temp == -1:
+                if (i,y) not in visited:
+                    visited[(i,y)] = dfs(i, y, visited)
+                    if  visited[(i,y)]  == -1:
                         continue
                     else:
-                        return graph[x][i] * temp
-            return -1
+                        visited[(x,y)] = graph[x][i] * visited[(i,y)]
+                        #return graph[x][i] * temp
+            return visited[(x,y)]
             
         # go through each of the queries and find the value
         res = []
@@ -70,9 +75,8 @@ class Solution1(object):
             if query[0] not in graph or query[1] not in graph:
                     res.append (-1.0)
                     continue
-            res.append(dfs(query[0], query[1], set()))
-        return res        
- 
+            res.append(dfs(query[0], query[1], {}))
+        return res
 s = Solution()
 print(s.smallestStringWithSwaps("dcab",[[0,3],[1,2],[0,2]]))
 
