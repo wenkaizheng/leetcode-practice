@@ -80,6 +80,35 @@ public:
     }
 };
 
+class Solution6{
+public:
+    int differentAmount(vector<int>& weights,vector<int>& numbers){
+        int count = 0;
+        int sum = 0;
+        for (int i = 0; i<weights.size();i++){
+            sum += weights[i] * numbers[i];
+        }
+        vector<int> dp(sum + 1, 0);
+        dp[0] = 1;
+        dp[sum] = 1;
+        for(int i = 0;i<weights.size();i++){
+            for(int j = 0;j<numbers[i];j++){
+                for(int k = sum; k>= weights[i];k--){
+                    if (dp[k - weights[i]]){
+                        dp[k] = 1;
+                    }
+                }
+            }
+        }
+        for(int i = 0; i<dp.size();i++){
+            if (dp[i] == 1){
+                count += 1;
+            }
+        }
+        return count;
+    }
+};
+
 int main(){
     Solution s = Solution(); 
     vector<int> a {1,2,5};
@@ -94,4 +123,8 @@ int main(){
     cout << s4.canPartition(d) << endl;
     Solution5 s5 = Solution5();
     cout << s5.canPartition(d) << endl;
+    Solution6 s6 = Solution6();
+    vector<int> w{1,2};
+    vector<int> n {2,1};
+    cout << s6.differentAmount(w,n) << endl;
 }
