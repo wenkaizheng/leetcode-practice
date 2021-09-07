@@ -46,30 +46,29 @@ class Solution1(object):
         
         # Step 2. DFS function
         def dfs(x, y, visited ):
-           
+            # neither x not y exists
+            if (x,y) in visited:
+                return visited[(x,y)]
+           # visited.add((x,y))
+            
+            # x points to y
             if y in graph[x]:
                 visited[(x,y)] = graph[x][y]
                 return graph[x][y]
             
             # x maybe connected to y through other nodes
             # use dfs to see if there is a path from x to y
-            #visited[(x,y)] = -1
+            visited[(x,y)] = -1
             for i in graph[x]:
-                if (i,y) not in visited:
-                    visited[(i,y)] = -1
-                    visited[(i,y)] = dfs(i, y, visited)
-                    if  visited[(i,y)]  == -1:
+               # if (i,y) not in visited:
+                    p = dfs(i, y, visited)
+                    if  p  == -1:
                         continue
                     else:
                         visited[(x,y)] = graph[x][i] * visited[(i,y)]
-                        return visited[(x,y)]
-                else:
-                     if  visited[(i,y)]  == -1:
-                        continue
-                     else:
-                        visited[(x,y)] = graph[x][i] * visited[(i,y)]
-                        return visited[(x,y)]
-            return -1
+                        #return graph[x][i] * temp
+               
+            return visited[(x,y)]
             
         # go through each of the queries and find the value
         res = []
