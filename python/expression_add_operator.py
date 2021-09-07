@@ -6,7 +6,7 @@ class Solution:
         def recurse(index, prev_operand, current_operand, value, string):
 
             # Done processing all the digits in num
-            print(current_operand)
+            #print(current_operand)
             if index == N:
 
                 # If the final value == target expected AND
@@ -24,12 +24,12 @@ class Solution:
             if current_operand > 0:
 
                 # NO OP recursion
-                print("no op",prev_operand,current_operand,value,string)
+               # print("no op",prev_operand,current_operand,value,string)
                 recurse(index + 1, prev_operand, current_operand, value, string)
 
             # ADDITION
             string.append('+'); string.append(str_op)
-            print("add",prev_operand,current_operand,value,string)
+           # print("add",prev_operand,current_operand,value,string)
             recurse(index + 1, current_operand, 0, value + current_operand, string)
             string.pop();string.pop()
 
@@ -38,15 +38,24 @@ class Solution:
 
                 # SUBTRACTION
                 string.append('-'); string.append(str_op)
-                print("sub",prev_operand,current_operand,value,string)
+               # print("sub",prev_operand,current_operand,value,string)
                 recurse(index + 1, -current_operand, 0, value - current_operand, string)
                 string.pop();string.pop()
 
                 # MULTIPLICATION
                 string.append('*'); string.append(str_op)
                # print(value,prev_operand)
-                print("mul",prev_operand,current_operand,value,string)
+                #print("mul",prev_operand,current_operand,value,string)
                 recurse(index + 1, current_operand * prev_operand, 0, value - prev_operand + (current_operand * prev_operand), string)
+                string.pop();string.pop()
+
+                #DIVISION
+                if current_operand == 0:
+                    return 
+                string.append('/'); string.append(str_op)
+               # print(value,prev_operand)
+               # print("div",prev_operand,current_operand,value,string)
+                recurse(index + 1, prev_operand / current_operand, 0, value - prev_operand + (prev_operand / current_operand), string)
                 string.pop();string.pop()
         recurse(0, 0, 0, 0, [])    
         return answers
@@ -76,7 +85,7 @@ class Solution1:
 
             # ADDITION
             string.append('+'); string.append(str_op)
-            print("add",prev_operand,current_operand,value,string)
+            #print("add",prev_operand,current_operand,value,string)
             recurse(index + 1, current_operand, value + current_operand, string)
             string.pop();string.pop()
 
@@ -85,21 +94,30 @@ class Solution1:
 
                 # SUBTRACTION
                 string.append('-'); string.append(str_op)
-                print("sub",prev_operand,current_operand,value,string)
+                #print("sub",prev_operand,current_operand,value,string)
                 recurse(index + 1, -current_operand, value - current_operand, string)
                 string.pop();string.pop()
 
                 # MULTIPLICATION
                 string.append('*'); string.append(str_op)
                # print(value,prev_operand)
-                print("mul",prev_operand,current_operand,value,string)
+                #print("mul",prev_operand,current_operand,value,string)
                 recurse(index + 1, current_operand * prev_operand, value - prev_operand + (current_operand * prev_operand), string)
+                string.pop();string.pop()
+
+                if current_operand == 0:
+                    return 
+                string.append('/'); string.append(str_op)
+               # print(value,prev_operand)
+                #print("div",prev_operand,current_operand,value,string)
+                #print(value - prev_operand + (prev_operand / current_operand))
+                recurse(index + 1, prev_operand / current_operand, value - prev_operand + (prev_operand / current_operand), string)
                 string.pop();string.pop()
         recurse(0, 0, 0, [])    
         return answers
 s = Solution()
 print(s.addOperators("1234",46))
-print(s.addOperators("1234",20))
+print(s.addOperators("1234",12-3/4))
 s = Solution1()
 print(s.addOperators("1234",46))
-print(s.addOperators("1234",10))
+print(s.addOperators("155",1))
