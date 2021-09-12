@@ -8,11 +8,11 @@ public:
         if(i < 0 || i >= grid.size() || j < 0 || j >= grid[0].size())
             return;
         // return if current position is of water or is already visited
-        if(grid[i][j] == '2' || grid[i][j] == '0')
+        if(grid[i][j] != '1')
             return;
 
         // mark the current as visited
-        grid[i][j] = '2';
+        grid[i][j] = '0';
 
         // do DFS in all 4 directions
         DFS(grid, i+1, j);
@@ -62,28 +62,62 @@ public:
                 else if(board[i][j]=='P')board[i][j]='O';
     }
 };
-int main(){
+class Solution2 {
+    void util(vector<vector<int>>& grid, int i, int j) {
+        if(i<0 || j<0 || i>=grid.size() || j>=grid[0].size() || grid[i][j])
+            return;
+        grid[i][j] = 1;
+        util(grid,i-1,j);
+        util(grid,i,j-1);
+        util(grid,i+1,j);
+        util(grid,i,j+1);
+    }
+public:
+    int closedIsland(vector<vector<int>>& grid) {
+        int c = 0;
+        int n = grid.size();
+        int m = grid[0].size();
+        for(int i=0; i<n; i++)
+            util(grid,i,0), util(grid,i,m-1);
+        for(int j=0; j<m; j++)
+            util(grid,0,j), util(grid,n-1,j);
+        for(int i=0; i<n; i++)
+            for(int j=0; j<m; j++)
+                if(!grid[i][j])
+                    util(grid,i,j), c++;
+        return c;
+    }
+};
+int main() {
     Solution s = Solution();
-    vector<vector<char>> test {
-            {'1','1','1','1','0'},
-            {'1','1','0','1','0'},
-            {'1','1','0','0','0'},
-            {'0','0','0','0','0'}
+    vector <vector<char>> test{
+            {'1', '1', '1', '1', '0'},
+            {'1', '1', '0', '1', '0'},
+            {'1', '1', '0', '0', '0'},
+            {'0', '0', '0', '0', '0'}
     };
     cout << s.numIslands(test) << endl;
     Solution1 s1 = Solution1();
-    vector<vector<char>> test1{
-            {'X','X','X','X'},
-            {'X','O','O','X'},
-            {'X','X','O','X'},
-            {'X','O','X','X'}
+    vector <vector<char>> test1{
+            {'X', 'X', 'X', 'X'},
+            {'X', 'O', 'O', 'X'},
+            {'X', 'X', 'O', 'X'},
+            {'X', 'O', 'X', 'X'}
     };
     s1.solve(test1);
-    for(int i = 0;i<4;i++){
-        for(int j =0; j<4; j++){
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
             cout << test1[i][j] << " ";
         }
         cout << "\n";
     }
+    Solution2 s2 = Solution2();
+    vector <vector<int>> test2{
+            {1, 1, 1, 1, 1, 1, 1, 0},
+            {1, 0, 0, 0, 0, 1, 1, 0},
+            {1, 0, 1, 0, 1, 1, 1, 0},
+            {1, 0, 0, 0, 0, 1, 0, 1},
+            {1, 1, 1, 1, 1, 1, 1, 0}};
+    cout << s2.closedIsland(test2) << endl;
     return 0;
 }
